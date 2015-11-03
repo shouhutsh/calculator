@@ -1,8 +1,5 @@
 package calculator;
 
-import calculator.digital.Digital;
-import calculator.digital.DoubleDigital;
-
 /**
  * Created by Qi on 2015/10/28.
  */
@@ -24,8 +21,8 @@ public class Symbol extends Node implements Comparable<Symbol> {
         return false;
     }
 
-    public Digital calculate() {
-        return type.doCalculate(this);
+    public Digital calculate() throws Exception {
+        return type.run(this);
     }
 
     @Override
@@ -36,74 +33,68 @@ public class Symbol extends Node implements Comparable<Symbol> {
     private enum Type {
         ADD(1, "+") {
             @Override
-            Digital doCalculate(Symbol s) {
-                if (s.getLeft() instanceof Digital) {
-                    Digital left = (Digital) s.getLeft();
-                    Digital right = (Digital) s.getRight();
-                    Digital result = new DoubleDigital(left.getDigital() + right.getDigital());
-                    doRelate(left.getLeft(), result, right.getRight());
-                    return result;
-                } else {
-                    Digital right = (Digital) s.getRight();
-                    Digital result = new DoubleDigital(right.getDigital());
-                    doRelate(s.getLeft(), result, right.getRight());
-                    return result;
-                }
+            double doCalculate(Digital var) {
+                return var.getDigital();
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) {
+                return left.getDigital() + right.getDigital();
             }
         },
-        SUB(2, "-") {
+        SUB(1, "-") {
             @Override
-            Digital doCalculate(Symbol s) {
-                if (s.getLeft() instanceof Digital) {
-                    Digital left = (Digital) s.getLeft();
-                    Digital right = (Digital) s.getRight();
-                    Digital result = new DoubleDigital(left.getDigital() - right.getDigital());
-                    doRelate(left.getLeft(), result, right.getRight());
-                    return result;
-                } else {
-                    Digital right = (Digital) s.getRight();
-                    Digital result = new DoubleDigital(-right.getDigital());
-                    doRelate(s.getLeft(), result, right.getRight());
-                    return result;
-                }
+            double doCalculate(Digital var) {
+                return -var.getDigital();
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) {
+                return left.getDigital() - right.getDigital();
             }
         },
-        MUL(3, "*") {
+        MUL(2, "*") {
             @Override
-            Digital doCalculate(Symbol s) {
-                Digital left = (Digital) s.getLeft();
-                Digital right = (Digital) s.getRight();
-                Digital result = new DoubleDigital(left.getDigital() * right.getDigital());
-                doRelate(left.getLeft(), result, right.getRight());
-                return result;
+            double doCalculate(Digital var) throws Exception {
+                throw new Exception("必须有两个参数");
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) {
+                return left.getDigital() * right.getDigital();
             }
         },
-        DIV(3, "/") {
+        DIV(2, "/") {
             @Override
-            Digital doCalculate(Symbol s) {
-                Digital left = (Digital) s.getLeft();
-                Digital right = (Digital) s.getRight();
-                Digital result = new DoubleDigital(left.getDigital() / right.getDigital());
-                doRelate(left.getLeft(), result, right.getRight());
-                return result;
+            double doCalculate(Digital var) throws Exception {
+                throw new Exception("必须有两个参数");
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) {
+                return left.getDigital() / right.getDigital();
             }
         },
-        SIN(4, "SIN") {
+        SIN(3, "SIN") {
             @Override
-            Digital doCalculate(Symbol s) {
-                Digital right = (Digital) s.getRight();
-                Digital result = new DoubleDigital(Math.sin(right.getDigital()));
-                doRelate(s.getLeft(), result, right.getRight());
-                return result;
+            double doCalculate(Digital var) {
+                return Math.sin(var.getDigital());
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) throws Exception {
+                throw new Exception("必须只有一个参数");
             }
         },
-        COS(4, "COS") {
+        COS(3, "COS") {
             @Override
-            Digital doCalculate(Symbol s) {
-                Digital right = (Digital) s.getRight();
-                Digital result = new DoubleDigital(Math.cos(right.getDigital()));
-                doRelate(s.getLeft(), result, right.getRight());
-                return result;
+            double doCalculate(Digital var) {
+                return Math.cos(var.getDigital());
+            }
+
+            @Override
+            double doCalculate(Digital left, Digital right) throws Exception {
+                throw new Exception("必须只有一个参数");
             }
         };
 
@@ -125,6 +116,57 @@ public class Symbol extends Node implements Comparable<Symbol> {
             throw new Exception("无法匹配运算符号");
         }
 
-        abstract Digital doCalculate(Symbol s);
+        public Digital run(Symbol s) throws Exception {
+            if (s.getLeft() instanceof Digital) {
+                if (s.getRight() instanceof Digital) {
+                    return Operate.DOUBLE.doOperate(s, this);
+                } else {
+                    return Operate.LEFT.doOperate(s, this);
+                }
+            } else {
+                if (s.getRight() instanceof Digital) {
+                    return Operate.RIGHT.doOperate(s, this);
+                } else {
+                    throw new Exception("符号解析错误或优先级设置错误");
+                }
+            }
+        }
+
+        abstract double doCalculate(Digital var) throws Exception;
+
+        abstract double doCalculate(Digital left, Digital right) throws Exception;
+    }
+
+    private enum Operate {
+        DOUBLE {
+            @Override
+            Digital doOperate(Symbol s, Type t) throws Exception {
+                Digital left = (Digital) s.getLeft();
+                Digital right = (Digital) s.getRight();
+                Digital result = new Digital(t.doCalculate(left, right));
+                doRelate(left.getLeft(), result, right.getRight());
+                return result;
+            }
+        },
+        LEFT {
+            @Override
+            Digital doOperate(Symbol s, Type t) throws Exception {
+                Digital left = (Digital) s.getLeft();
+                Digital result = new Digital(t.doCalculate(left));
+                doRelate(left.getLeft(), result, s.getRight());
+                return result;
+            }
+        },
+        RIGHT {
+            @Override
+            Digital doOperate(Symbol s, Type t) throws Exception {
+                Digital right = (Digital) s.getRight();
+                Digital result = new Digital(t.doCalculate(right));
+                doRelate(s.getLeft(), result, right.getRight());
+                return result;
+            }
+        };
+
+        abstract Digital doOperate(Symbol s, Type t) throws Exception;
     }
 }

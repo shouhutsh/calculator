@@ -1,15 +1,12 @@
 package calculator;
 
-import calculator.digital.Digital;
-import calculator.digital.StringDigital;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * 公式类
- *      处理传入的算数式
+ * 处理传入的算数式
  */
 public class Formula {
 
@@ -33,30 +30,31 @@ public class Formula {
     private Digital temp;
 
     public Formula(String text) throws Exception {
-        if(text == null || text.isEmpty()) throw new Exception("算数式不能为空！");
+        if (text == null || text.isEmpty()) throw new Exception("算数式不能为空！");
         this.text = text;
     }
 
     /**
      * 规约 将算数式依据优先级计算
-     *      例如：     1 + 2 * 3 + 4
-     *      数据结构：  [1]<->[+]<->[2]<->[*]<->[3]<->[+]<->[4]
-     *                                    |
-     *      一次规约：              [2]<->[*]<->[3]
-     *                                   |
-     *                                   |
-     *                      [1]<->[+]<->[6]<->[+]<->[4]
-     *                             |
-     *      二次规约：       [1]<->[+]<->[6]
-     *                             |
-     *                             |
-     *                            [7]<->[+]<->[4]
-     *                             |
-     *      三次规约：             [11]
+     * 例如：     1 + 2 * 3 + 4
+     * 数据结构：  [1]<->[+]<->[2]<->[*]<->[3]<->[+]<->[4]
+     * |
+     * 一次规约：              [2]<->[*]<->[3]
+     * |
+     * |
+     * [1]<->[+]<->[6]<->[+]<->[4]
+     * |
+     * 二次规约：       [1]<->[+]<->[6]
+     * |
+     * |
+     * [7]<->[+]<->[4]
+     * |
+     * 三次规约：             [11]
+     *
      * @param symbols
      * @return
      */
-    public Digital terms(List<Symbol> symbols) {
+    public Digital terms(List<Symbol> symbols) throws Exception {
         Collections.sort(symbols);
 
         for (Symbol s : symbols) {
@@ -72,8 +70,8 @@ public class Formula {
         while (offset < text.length()) {
             Node cur = getNextNode();
             if (cur == null) continue;
-            if(cur instanceof Digital) temp = (Digital) cur;
-            if(cur instanceof Symbol) symbols.add((Symbol) cur);
+            if (cur instanceof Digital) temp = (Digital) cur;
+            if (cur instanceof Symbol) symbols.add((Symbol) cur);
 
             Node.doRelate(prev, cur);
             prev = cur;
@@ -85,7 +83,7 @@ public class Formula {
     // 处理 Digital，若遇到数字将 次要优先级 重置为 0
     private Digital doDigital() {
         secondPriority = 0;
-        return new StringDigital(this);
+        return new Digital(this);
     }
 
     // 处理 Symbol，每遇到一次 Symbol 增加次要优先级，增加的数量也不算是随便弄的吧，反正目前这样就可以
@@ -96,7 +94,7 @@ public class Formula {
 
     // 获取算数式的下一个 Node （Symbol 或 Digital），遇到 '(' 和 ')' 时需要调整 优先级
     private Node getNextNode() throws Exception {
-        if ("()".contains(readahead()+"")) {
+        if ("()".contains(readahead() + "")) {
             basePriority += ('(' == getchar()) ? PRIIORITY_WINDOW : -PRIIORITY_WINDOW;
             return null;
         }
@@ -116,7 +114,7 @@ public class Formula {
     }
 
     // 判断是否解析完成
-    public boolean hasNext(){
+    public boolean hasNext() {
         return offset < text.length();
     }
 
@@ -131,7 +129,7 @@ public class Formula {
     }
 
     // 做一次规约
-    private static Digital doTerms(Symbol symbol) {
+    private static Digital doTerms(Symbol symbol) throws Exception {
         return symbol.calculate();
     }
 

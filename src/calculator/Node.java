@@ -30,7 +30,7 @@ public abstract class Node {
         if (t2 != null) t2.setLeft(t1);
     }
 
-    public static void doRelate(Node left, Node cur, Node right){
+    public static void doRelate(Node left, Node cur, Node right) {
         doRelate(left, cur);
         doRelate(cur, right);
     }
